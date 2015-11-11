@@ -1,0 +1,84 @@
+```{r}
+library(tm);
+```
+There are two datasets: esplanade and sistic. Each contains 3 categories:dance, music, theatre.
+
+Read esplanade dataset 
+```{r}
+esp.dance   = read.delim('data/data.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+esp.music   = read.delim('data/data.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+esp.theatre = read.delim('data/data.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+```
+Read sistic dataset 
+```{r}
+sis.dance   = read.delim('data/sistic.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+sis.music   = read.delim('data/sistic.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+sis.theatre = read.delim('data/sistic.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+```
+
+Categorize data by groups and merge
+```{r}
+dance   = rbind(esp.dance, sis.dance); dance$id = 1
+music   = rbind(esp.music, sis.music); music$id = 2
+theatre = rbind(esp.theatre, sis.theatre); theatre$id = 3
+data = rbind(dance, music, theatre)
+nrow(data)
+```
+
+Preprocessing
+```{r}
+Corp = Corpus(VectorSource(data[,2]))
+Corp = tm_map(Corp, PlainTextDocument)
+Corp = tm_map(Corp, content_transformer(tolower))
+Corp = tm_map(Corp, removePunctuation)
+Corp = tm_map(Corp, removeWords, c(stopwords("english")))
+```
+
+Document Term Matrix
+```{r}
+dtm  = DocumentTermMatrix(Corp)
+dtm  = removeSparseTerms(dtm, 0.90)
+DTM = as.data.frame(as.matrix(dtm))
+colnames(DTM) = make.names(colnames(DTM))
+DTM_freq = colSums(DTM)
+thr_100 = sort(DTM_freq, decreasing = TRUE)[10]
+DTM = DTM[ , DTM_freq < thr_100]
+```
+
+Replace text data by doc-term-freq data
+```{r}
+data$DESCRIPTION = NULL
+data = cbind(data, DTM)
+```
+
+Logistic Regression with raw frequency
+Logistic Regression for cat dance
+```{r}
+label_dtm = data[, - c(1:5)]
+label_dtm$id = as.numeric(label_dtm$id == 1)
+label_dtm$id = as.factor(label_dtm$id)
+lg_1 = glm(formula = id ~ . , family = "binomial", data = label_dtm)
+summary(lg_1)
+```
+Logistic Regression for cat music
+```{r}
+label_dtm = data[, - c(1:5)]
+label_dtm$id = as.numeric(label_dtm$id == 2)
+label_dtm$id = as.factor(label_dtm$id)
+lg_2 = glm(formula = id ~ . , family = "binomial", data = label_dtm)
+summary(lg_2)
+```
+
+Logistic Regression for cat theatre
+```{r}
+label_dtm = data[, - c(1:5)]
+label_dtm$id = as.numeric(label_dtm$id == 3)
+label_dtm$id = as.factor(label_dtm$id)
+lg_3 = glm(formula = id ~ . , family = "binomial", data = label_dtm)
+summary(lg_3)
+```
+
+
+
+
+

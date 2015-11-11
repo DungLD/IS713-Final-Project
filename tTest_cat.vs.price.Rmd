@@ -1,0 +1,63 @@
+There are two datasets: esplanade and sistic. Each contains 3 categories:dance, music, theatre.
+
+Read esplanade dataset 
+```{r}
+esp.dance   = read.delim('data/data.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(esp.dance)
+nrow(esp.dance[esp.dance$AVG_PRICE == 0,])
+esp.music   = read.delim('data/data.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(esp.music)
+nrow(esp.music[esp.music$AVG_PRICE == 0,])
+esp.theatre = read.delim('data/data.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(esp.theatre)
+nrow(esp.theatre[esp.theatre$AVG_PRICE == 0,])
+```
+Read sistic dataset 
+```{r}
+sis.dance   = read.delim('data/sistic.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(sis.dance)
+nrow(sis.dance[sis.dance$AVG_PRICE == 0,])
+sis.music   = read.delim('data/sistic.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(sis.music)
+nrow(sis.music[sis.music$AVG_PRICE == 0,])
+sis.theatre = read.delim('data/sistic.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+nrow(sis.theatre)
+nrow(sis.theatre[sis.theatre$AVG_PRICE == 0,])
+```
+
+Categorize data by groups and merge
+```{r}
+dance   = rbind(esp.dance, sis.dance); dance$id = 1
+music   = rbind(esp.music, sis.music); music$id = 2
+theatre = rbind(esp.theatre, sis.theatre); theatre$id = 3
+data = rbind(dance, music, theatre)
+nrow(data)
+```
+
+Remove free events 
+```{r}
+dance_non_free = dance[dance$AVG_PRICE != 0, 3]
+str(dance_non_free)
+music_non_free = music[music$AVG_PRICE != 0, 3]
+str(music_non_free)
+theatre_non_free = theatre[theatre$AVG_PRICE != 0, 3]
+str(theatre_non_free)
+```
+
+Perform t-test between pairs of cats:
+Dance versus music
+```{r}
+t.test(dance_non_free, music_non_free)
+```
+Dance versus theatre
+```{r}
+t.test(dance_non_free, theatre_non_free)
+```
+Music versus theatre
+```{r}
+t.test(music_non_free, theatre_non_free)
+```
+
+
+
+

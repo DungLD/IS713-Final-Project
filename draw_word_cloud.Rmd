@@ -1,0 +1,66 @@
+```{r}
+library(wordcloud);
+library(tm);
+
+require(RColorBrewer);
+```
+There are two datasets: esplanade and sistic. Each contains 3 categories:dance, music, theatre.
+
+Read esplanade dataset 
+```{r}
+esp.dance   = read.delim('data/data.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+esp.music   = read.delim('data/data.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+esp.theatre = read.delim('data/data.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+```
+Read sistic dataset 
+```{r}
+sis.dance   = read.delim('data/sistic.dance.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+sis.music   = read.delim('data/sistic.music.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+sis.theatre = read.delim('data/sistic.theatre.tsv', header = T, sep = '\t', stringsAsFactors = FALSE, quote = "")
+```
+
+Categorize data by groups and merge
+```{r}
+dance   = rbind(esp.dance, sis.dance); dance$id = 1
+music   = rbind(esp.music, sis.music); music$id = 2
+theatre = rbind(esp.theatre, sis.theatre); theatre$id = 3
+data = rbind(dance, music, theatre)
+nrow(data)
+```
+
+Extracting, preprocessing,encoding text from data and procuding document-term-matrix 
+```{r}
+Corp = Corpus(VectorSource(data[,2]))
+Corp = tm_map(Corp, PlainTextDocument)
+Corp = tm_map(Corp, content_transformer(tolower))
+Corp = tm_map(Corp, removePunctuation)
+Corp = tm_map(Corp, removeWords, c(stopwords("english")))
+dtm  = DocumentTermMatrix(Corp)
+dtm  = removeSparseTerms(dtm, 0.99)
+DTM = as.data.frame(as.matrix(dtm))
+colnames(DTM) = make.names(colnames(DTM))
+DTM_freq = colSums(DTM)
+thr_5 = sort(DTM_freq, decreasing = TRUE)[5]
+DTM = DTM[ , DTM_freq < thr_5]
+data$DESCRIPTION = NULL
+data = cbind(data, DTM)
+```
+
+Draw word cloud
+```{r}
+dtm_dan = data[data$id == 1, -c(1:6)]
+dtm_mus = data[data$id == 2, -c(1:6)]
+dtm_the = data[data$id == 3, -c(1:6)]
+```
+Drawing wordclouds for each cat
+```{r}
+pal2 <- brewer.pal(8,"Dark2")
+wordcloud(colnames(dtm_dan), colSums(dtm_dan),scale = c(2,0.5),min.freq = 10, colors=pal2)
+wordcloud(colnames(dtm_mus), colSums(dtm_mus),scale = c(2,0.5),min.freq = 30, colors=pal2)
+wordcloud(colnames(dtm_the), colSums(dtm_the),scale = c(2,0.5),min.freq = 10, colors=pal2)
+```
+
+
+
+
+
